@@ -67,7 +67,7 @@ optimization_input_model = api.model('OptimizationInput', {
 # Output models
 battery_result_model = api.model('BatteryResult', {
     'charging_power': fields.List(fields.Float, description='Charging power at each time step (W)'),
-    'discharging_power': fields.List(fields.Float, description='Discharging power at each time step (W)'), 
+    'discharging_power': fields.List(fields.Float, description='Discharging power at each time step (W)'),
     'state_of_charge': fields.List(fields.Float, description='State of charge at each time step (Wh)')
 })
 
