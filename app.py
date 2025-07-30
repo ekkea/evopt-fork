@@ -52,7 +52,7 @@ battery_config_model = api.model('BatteryConfig', {
 time_series_model = api.model('TimeSeries', {
     'dt': fields.List(fields.Float, required=True, description='duration in seconds for each time step (s)'),
     'gt': fields.List(fields.Float, required=True, description='Required energy for home consumption at each time step (Wh)'),
-    'ft': fields.List(fields.Float, required=True, description='Forecasted photovoltaic energy generation at each time step (Wh)'),
+    'ft': fields.List(fields.Float, required=True, description='Forecasted solar generation at each time step (Wh)'),
     'p_N': fields.List(fields.Float, required=True, description='Price per kWh taken from grid at each time step'),
     'p_E': fields.List(fields.Float, required=True, description='Price per kWh fed into grid at each time step'),
 })
