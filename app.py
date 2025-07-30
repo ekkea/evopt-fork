@@ -94,8 +94,8 @@ class BatteryConfig:
 @dataclass
 class TimeSeriesData:
     dt: List[int] # time step length
-    gt: List[float]  # Required avg. power
-    ft: List[float]  # Forecasted production power
+    gt: List[float]  # Required total energy
+    ft: List[float]  # Forecasted production
     p_N: List[float]  # Import prices
     p_E: List[float]  # Export prices
 
