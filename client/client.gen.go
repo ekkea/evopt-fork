@@ -40,7 +40,7 @@ type BatteryConfig struct {
 	// DMax Maximum discharge power in W
 	DMax float32 `json:"d_max"`
 
-	// PA Value EUR per kWh at end of time horizon (economic value of remaining energy)
+	// PA Monetary value of the stored energy per Wh at end of time horizon
 	PA float32 `json:"p_a"`
 
 	// SGoal Goal state of charge for this battery at each time step (Wh)
@@ -97,10 +97,10 @@ type OptimizationResult struct {
 	// - 1: Export to grid
 	FlowDirection *[]OptimizationResultFlowDirection `json:"flow_direction,omitempty"`
 
-	// GridExport Power exported to grid at each time step (W)
+	// GridExport Energy exported to grid at each time step (Wh)
 	GridExport *[]float32 `json:"grid_export,omitempty"`
 
-	// GridImport Power imported from grid at each time step (W)
+	// GridImport Energy imported from grid at each time step (Wh)
 	GridImport *[]float32 `json:"grid_import,omitempty"`
 
 	// ObjectiveValue Optimal objective function value (economic benefit in currency units). Null if not optimal.
@@ -137,10 +137,10 @@ type TimeSeries struct {
 	// Gt Household energy demand at each time step (Wh)
 	Gt []float32 `json:"gt"`
 
-	// PE Grid export price per Wh at each time step (currency units/kWh)
+	// PE Grid export remuneration per Wh at each time step (currency units/Wh)
 	PE []float32 `json:"p_E"`
 
-	// PN Grid import price per Wh at each time step (currency units/kWh)
+	// PN Grid import price per Wh at each time step (currency units/Wh)
 	PN []float32 `json:"p_N"`
 }
 

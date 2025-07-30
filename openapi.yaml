@@ -206,7 +206,7 @@ components:
         p_a:
           type: number
           minimum: 0
-          description: Value EUR per kWh at end of time horizon (economic value of remaining energy)
+          description: Monetary value of the stored energy per Wh at end of time horizon 
           example: 0.25
         s_goal:
           type: array
@@ -251,14 +251,14 @@ components:
           items:
             type: number
             minimum: 0
-          description: Grid import price per Wh at each time step (currency units/kWh)
+          description: Grid import price per Wh at each time step (currency units/Wh)
           example: [0.30, 0.25, 0.20, 0.22, 0.28, 0.32]
         p_E:
           type: array
           items:
             type: number
             minimum: 0
-          description: Grid export price per Wh at each time step (currency units/kWh)
+          description: Grid export remuneration per Wh at each time step (currency units/Wh)
           example: [0.15, 0.12, 0.10, 0.11, 0.14, 0.16]
 
     OptimizationInput:
