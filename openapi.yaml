@@ -344,14 +344,14 @@ components:
           items:
             type: number
             minimum: 0
-          description: Power imported from grid at each time step (W)
+          description: Energy imported from grid at each time step (Wh)
           example: [1000, 0, 0, 0, 0, 2000]
         grid_export:
           type: array
           items:
             type: number
             minimum: 0
-          description: Power exported to grid at each time step (W)
+          description: Energy exported to grid at each time step (Wh)
           example: [0, 2000, 3000, 2500, 500, 0]
         flow_direction:
           type: array
