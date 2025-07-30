@@ -172,11 +172,11 @@ class EVChargingOptimizer:
         
         # Grid import cost (negative because we want to minimize cost) [EUR]
         for t in time_steps:
-            objective -= self.variables['n'][t] * self.time_series.p_N[t] * self.time_series.dt[t] / 3600 / 1000
+            objective -= self.variables['n'][t] * self.time_series.p_N[t] / 1000.
         
         # Grid export revenue [EUR]
         for t in time_steps:
-            objective += self.variables['e'][t] * self.time_series.p_E[t] * self.time_series.dt[t] / 3600 / 1000
+            objective += self.variables['e'][t] * self.time_series.p_E[t] / 1000.
         
         # Final state of charge value [EUR]
         for i, bat in enumerate(self.batteries):
@@ -384,7 +384,7 @@ class ExampleData(Resource):
                     "c_min": 1380, 
                     "c_max": 3680, 
                     "d_max": 0,
-                    "p_a": 0.25
+                    "p_a": 0.12
                 },
                 {
                     "s_min": 2500,
@@ -393,7 +393,7 @@ class ExampleData(Resource):
                     "c_min": 0,
                     "c_max": 6000, 
                     "d_max": 6000, 
-                    "p_a": 0.15
+                    "p_a": 0.12
                 }
             ],
             "time_series": {
