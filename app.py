@@ -124,7 +124,7 @@ class EVChargingOptimizer:
         self.variables['c'] = {}
         for i, bat in enumerate(self.batteries):
             self.variables['c'][i] = [
-                pulp.LpVariable(f"c_{i}_{t}", lowBound=0, upBound= bat.c_max * self.time_series.dt[t] /3600.)
+                pulp.LpVariable(f"c_{i}_{t}", lowBound=0, upBound=bat.c_max * self.time_series.dt[t] /3600.)
                 for t in time_steps
             ]
         
