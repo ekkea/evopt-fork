@@ -230,7 +230,8 @@ class EVChargingOptimizer:
             if bat.c_min > 0:
                 for t in time_steps:
                     # Lower bound: either 0 or at least c_min
-                    self.problem += self.variables['c'][i][t] >= bat.c_min * self.time_series.dt[t] /3600. * self.variables['z_c'][i][t]
+                    self.problem += (self.variables['c'][i][t] >= bat.c_min * self.time_series.dt[t] /3600. 
+                                     * self.variables['z_c'][i][t])
 
         # Constraints (4)-(5): Grid flow direction (only when p_N <= p_E)
         for t in time_steps:
