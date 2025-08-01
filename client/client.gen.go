@@ -68,6 +68,21 @@ type BatteryResult struct {
 	StateOfCharge *[]float32 `json:"state_of_charge,omitempty"`
 }
 
+// ConfigItem defines model for ConfigItem.
+type ConfigItem struct {
+	// Key The key string of the configuration item
+	Key string `json:"key"`
+
+	// Value A string representing the value of the configuration item. If the value
+	// cannot be interpreted as a value of the expected type, the default value
+	// will be used.
+	// - boolean values: "true", "false"
+	// - enumaration values: "option_a", "option_b"
+	// - integer values: "123"
+	// - number values: "1.23"
+	Value string `json:"value"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	// Message Error message describing what went wrong
@@ -77,7 +92,8 @@ type Error struct {
 // OptimizationInput defines model for OptimizationInput.
 type OptimizationInput struct {
 	// Batteries Configuration for all batteries in the system
-	Batteries []BatteryConfig `json:"batteries"`
+	Batteries     []BatteryConfig `json:"batteries"`
+	Configuration *[]ConfigItem   `json:"configuration,omitempty"`
 
 	// EtaC Charging efficiency (0 to 1)
 	EtaC *float32 `json:"eta_c,omitempty"`

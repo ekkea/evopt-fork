@@ -162,6 +162,28 @@ paths:
 
 components:
   schemas:
+    ConfigItem:
+      type: object
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+          description: The key string of the configuration item 
+          example: AllowChargingFromGrid
+        value: 
+          type: string
+          description: |
+            A string representing the value of the configuration item. If the value
+            cannot be interpreted as a value of the expected type, the default value 
+            will be used.
+            - boolean values: "true", "false"
+            - enumaration values: "option_a", "option_b" 
+            - integer values: "123"
+            - number values: "1.23"
+          example: "true" 
+    
     BatteryConfig:
       type: object
       required:
@@ -267,6 +289,12 @@ components:
         - batteries
         - time_series
       properties:
+        configuration:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConfigItem"
+            minItems: 0
+            description: general configuration of the system model and the optimization
         batteries:
           type: array
           items:

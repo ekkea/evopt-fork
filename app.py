@@ -38,6 +38,11 @@ api = Api(app, version='1.0', title='EV Charging Optimization API',
 ns = api.namespace('optimize', description='EV Charging Optimization Operations')
 
 # Input models for API documentation
+configuration_model = api.model('ConfigItem',{
+    'key': fields.String(required=True, description='The key string of the configuration item'),
+    'value': fields.String(required=True, description='A string representing the value of the configuration item.')
+})
+
 battery_config_model = api.model('BatteryConfig', {
     's_min': fields.Float(required=True, description='Minimum state of charge (Wh)'),
     's_max': fields.Float(required=True, description='Maximum state of charge (Wh)'),
@@ -58,6 +63,7 @@ time_series_model = api.model('TimeSeries', {
 })
 
 optimization_input_model = api.model('OptimizationInput', {
+    'configuration': fields.List(fields.Nested(configuration_model), required=False, description='general configuration of the system model and the optimization'),
     'batteries': fields.List(fields.Nested(battery_config_model), required=True, description='Battery configurations'),
     'time_series': fields.Nested(time_series_model, required=True, description='Time series data'),
     'eta_c': fields.Float(required=False, default=0.95, description='Charging efficiency'),
@@ -308,6 +314,15 @@ class OptimizeCharging(Resource):
             if not data:
                 api.abort(400, "No input data provided")
             
+            #Parse model configuration
+            configuration = dict()
+            if 'configuration' in data: # configuration is optional
+                for config_item in data['configuration']:
+                    if config_item['key'] in configuration == False:
+                        configuration[config_item['key']] = config_item['value']
+                    else:
+                        api.abort(400, "duplicate config item key in configuration provided")
+
             # Parse battery configurations
             batteries = []
             for bat_data in data['batteries']:
