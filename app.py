@@ -44,6 +44,7 @@ configuration_model = api.model('ConfigItem',{
 })
 
 battery_config_model = api.model('BatteryConfig', {
+    'configuration': fields.List(fields.Nested(configuration_model), required=False, description='configuration of the battery behavior and control constraints'),
     's_min': fields.Float(required=True, description='Minimum state of charge (Wh)'),
     's_max': fields.Float(required=True, description='Maximum state of charge (Wh)'),
     's_initial': fields.Float(required=True, description='Initial state of charge (Wh)'),
@@ -88,6 +89,7 @@ optimization_result_model = api.model('OptimizationResult', {
 
 @dataclass
 class BatteryConfig:
+    configuration: dict
     s_min: float
     s_max: float
     s_initial: float
@@ -154,13 +156,13 @@ class EVChargingOptimizer:
         self.variables['n'] = [pulp.LpVariable(f"n_{t}", lowBound=0) for t in time_steps]
         self.variables['e'] = [pulp.LpVariable(f"e_{t}", lowBound=0) for t in time_steps]
         
-        # Binary flow direction variables (only when p_N <= p_E)
+        # Binary variable: power flow direction to / from grid variables
+        # these variables 
+        # 1. avoid direct export from import if export remuneration is greater than import cost
+        # 2. control grid charging to batteries and grid export from batteries acc. to configuration
         self.variables['y'] = []
         for t in time_steps:
-            if self.time_series.p_N[t] <= self.time_series.p_E[t]:
-                self.variables['y'].append(pulp.LpVariable(f"y_{t}", cat='Binary'))
-            else:
-                self.variables['y'].append(None)
+            self.variables['y'].append(pulp.LpVariable(f"y_{t}", cat='Binary'))
         
         # Binary variable for charging activation
         self.variables['z_c'] = {}
@@ -231,21 +233,34 @@ class EVChargingOptimizer:
                 for t in range(1, self.T):
                     if bat.s_goal[t] > 0:
                         self.problem += (self.variables['s'][i][t] >= bat.s_goal[t])
-
+                    
             # Constraint (7): Minimum charge power limits
             if bat.c_min > 0:
                 for t in time_steps:
                     # Lower bound: either 0 or at least c_min
                     self.problem += (self.variables['c'][i][t] >= bat.c_min * self.time_series.dt[t] / 3600. 
                                      * self.variables['z_c'][i][t])
+                    
+            # control battery charging from grid and discharging to grid
+            if bat.configuration.get("AllowChargingFromGrid", "False") != "True":
+                print(f"no charging for {i}")
+                for t in time_steps:  
+                    self.problem += (self.variables['c'][i][t] <= self.M  * self.variables['y'][t])
+            else:
+                print(f"charging for {i}")
+            if bat.configuration.get("AllowDischargingToGrid", "False") != "True":
+                print(f"no discharging for {i}")
+                for t in time_steps:  
+                    self.problem += (self.variables['d'][i][t] <= self.M  * (1 - self.variables['y'][t]))
+            else:
+                print(f"discharging for {i}")
 
-        # Constraints (4)-(5): Grid flow direction (only when p_N <= p_E)
+        # Constraints (4)-(5): Grid flow direction 
         for t in time_steps:
-            if self.variables['y'][t] is not None:  # Only when p_N <= p_E
-                # Export constraint
-                self.problem += self.variables['e'][t] <= self.M * self.variables['y'][t]
-                # Import constraint
-                self.problem += self.variables['n'][t] <= self.M * (1 - self.variables['y'][t])
+            # Export constraint
+            self.problem += self.variables['e'][t] <= self.M * self.variables['y'][t]
+            # Import constraint
+            self.problem += self.variables['n'][t] <= self.M * (1 - self.variables['y'][t])
             
     def solve(self) -> Dict:
         """Solve the optimization problem and return results"""
@@ -318,7 +333,7 @@ class OptimizeCharging(Resource):
             configuration = dict()
             if 'configuration' in data: # configuration is optional
                 for config_item in data['configuration']:
-                    if config_item['key'] in configuration == False:
+                    if not config_item['key'] in configuration:
                         configuration[config_item['key']] = config_item['value']
                     else:
                         api.abort(400, "duplicate config item key in configuration provided")
@@ -326,7 +341,16 @@ class OptimizeCharging(Resource):
             # Parse battery configurations
             batteries = []
             for bat_data in data['batteries']:
+                #Parse configuration
+                bat_config = dict()
+                if 'configuration' in bat_data: # configuration is optional
+                    for config_item in bat_data['configuration']:
+                        if not config_item['key'] in bat_config:
+                            bat_config[config_item['key']] = config_item['value']
+                        else:
+                            api.abort(400, "duplicate config item key in configuration provided")
                 batteries.append(BatteryConfig(
+                    configuration=bat_config,
                     s_min=bat_data['s_min'],
                     s_max=bat_data['s_max'],
                     s_initial=bat_data['s_initial'],
@@ -391,8 +415,13 @@ class ExampleData(Resource):
     def get(self):
         """Get example input data for testing the optimization"""
         example_data = {
+
             "batteries": [
                 {
+                    "configuration":[
+                        {"key":"AllowChargingFromGrid", "value":"True"},
+                        {"key":"AllowDischargingToGrid", "value":"False"}
+                    ],
                     "s_min": 2000,
                     "s_max": 36000,
                     "s_initial": 15000,
@@ -403,6 +432,10 @@ class ExampleData(Resource):
                     "p_a": 0.00012
                 },
                 {
+                    "configuration":[
+                        {"key":"AllowChargingFromGrid", "value":"True"},
+                        {"key":"AllowDischargingToGrid", "value":"True"}
+                    ],
                     "s_min": 2500,
                     "s_max": 16200,
                     "s_initial": 5000,

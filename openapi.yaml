@@ -176,13 +176,9 @@ components:
           type: string
           description: |
             A string representing the value of the configuration item. If the value
-            cannot be interpreted as a value of the expected type, the default value 
-            will be used.
-            - boolean values: "true", "false"
-            - enumaration values: "option_a", "option_b" 
-            - integer values: "123"
-            - number values: "1.23"
-          example: "true" 
+            cannot be interpreted as a value of the expected type or does not represent a
+            permitted value, the default value will be used.
+          example: "True" 
     
     BatteryConfig:
       type: object
@@ -195,6 +191,22 @@ components:
         - d_max
         - p_a
       properties:
+        configuration:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConfigItem"
+          minItems: 0
+          description: |
+            List of key-value-pairs configuring the battery behavior and control constraints. 
+            Available configuration items are:
+            - AllowChargingFromGrid: Controls whether the battery can be charged from the grid.
+              - True: The battery can be charged from grid at any time. The actual decision is subject
+                to the optimization.
+              - False: (default) The battery cannot be charged while power is retrieved from grid
+            - AllowDischargingToGrid: Controls whether the battery can discharge to grid.
+              - True: The battery can discharge to the grid at any time. The actual decision is
+                subject to the optimization.
+              - False: (default) The battery cannot be discharged while power is exported to the grid.
         s_min:
           type: number
           minimum: 0
@@ -293,8 +305,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ConfigItem"
-            minItems: 0
-            description: general configuration of the system model and the optimization
+          minItems: 0
+          description: |
+            List of key-value-pairs configuring the overall system model and the optimization
         batteries:
           type: array
           items:
