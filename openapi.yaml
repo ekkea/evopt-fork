@@ -260,8 +260,10 @@ components:
                 Along with that, a buffer size in Wh can be specified to to provide a sufficient distribution of the load drawn
                 over time. This constraint will make sure that the integral of the optimized load profile will never deviate 
                 from the average load by more than 1/2 of the buffer size in either direction.
+                Typical use cases: Water boilers, heat pumps.
             - value_driven: The load can be fully controlled by the optimization within p_min and p_max, using its
                 indicated value per Wh.
+                Typical use cases: fountain pumps, bitcoin miners, air humidifiers 
         p_min:
           type: number
           minimum: 0
