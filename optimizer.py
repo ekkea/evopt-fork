@@ -63,7 +63,7 @@ class Optimizer:
         # Compute scaling parameters
         self.min_import_price = np.min(self.time_series.p_N)
         self.max_import_price = np.max(self.time_series.p_N)
-        #make sure goal_penalty is always positive
+        # make sure goal_penalty is always positive
         self.goal_penalty = np.min([self.max_import_price, 0.1e-3]) * 10e1
 
     def create_model(self):
