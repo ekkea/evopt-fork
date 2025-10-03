@@ -64,7 +64,8 @@ class Optimizer:
         self.min_import_price = np.min(self.time_series.p_N)
         self.max_import_price = np.max(self.time_series.p_N)
         # make sure goal_penalty is always positive
-        self.goal_penalty = np.min([self.max_import_price, 0.1e-3]) * 10e1
+        self.goal_penalty_energy = np.min([self.max_import_price, 0.1e-3]) * 10e1
+        self.goal_penalty_power = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
 
     def create_model(self):
         """
@@ -116,6 +117,13 @@ class Optimizer:
                 for t in self.time_steps:
                     if self.batteries[i].s_goal[t] > 0:
                         self.variables['s_goal_pen'][i][t] = pulp.LpVariable(f"s_goal_pen_{i}_{t}", lowBound = 0)
+        
+        # penalty variable for not being able to cahrge with the required power
+        self.variables['p_demand_pen'] = [[None for t in self.time_steps] for i in range(len(self.batteries))]
+        for i, bat in enumerate(self.batteries):
+            if bat.p_demand is not None:
+                for t in self.time_steps:
+                    self.variables['p_demand_pen'][i][t] = pulp.LpVariable(f"p_demand_pen_{i}_{t}", lowBound = 0)
 
         # Grid import/export variables [Wh]
         self.variables['n'] = [pulp.LpVariable(f"n_{t}", lowBound=0) for t in self.time_steps]
@@ -169,13 +177,19 @@ class Optimizer:
             objective += self.variables['s'][i][-1] * bat.p_a
 
         # Penalites for goals that cannot be met
-        # unmet battery charging goals
         for i, bat in enumerate(self.batteries):
+            # unmet battery charging goals
             if self.batteries[i].s_goal is not None:
                 for t in self.time_steps:
                     if self.batteries[i].s_goal[t] > 0:
                         # negative target function contribution in a maximizing optimization
-                        objective += - self.goal_penalty * self.variables['s_goal_pen'][i][t]
+                        objective += - self.goal_penalty_energy * self.variables['s_goal_pen'][i][t]
+            # unmet charging demand due to fully loaded battery
+            if bat.p_demand is not None:
+                for t in self.time_steps:
+                    objective += - self.goal_penalty_power \
+                                * self.variables['p_demand_pen'][i][t] \
+                                * (1 + (self.T - t)/self.T)
 
         # Secondary strategies to implement preferences without impact to actual cost
         # prefer charging first, then grid export
@@ -243,14 +257,14 @@ class Optimizer:
 
             # Constraint: Minimum battery charge demand (for t > 0)
             if bat.p_demand is not None:
-                for t in range(1, self.T):
+                for t in self.time_steps:
                     if bat.p_demand[t] > 0:
                         # clip required charge to max charging power if needed
                         # and leave some air to breathe for the optimizer
                         p_demand = bat.p_demand[t]
                         if p_demand >= bat.c_max * self.time_series.dt[t] / 3600.:
                             p_demand = bat.c_max * self.time_series.dt[t] / 3600. * 0.999
-                        self.problem += (self.variables['c'][i][t] >= p_demand)
+                        self.problem += (self.variables['c'][i][t] + self.variables['p_demand_pen'][i][t] >= p_demand)
                     elif bat.c_min > 0:
                         # in time steps without given charging demand, apply normal lower bound:
                         # Lower bound: either 0 or at least c_min
