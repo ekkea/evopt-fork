@@ -118,7 +118,7 @@ class Optimizer:
                     if self.batteries[i].s_goal[t] > 0:
                         self.variables['s_goal_pen'][i][t] = pulp.LpVariable(f"s_goal_pen_{i}_{t}", lowBound = 0)
         
-        # penalty variable for not being able to cahrge with the required power
+        # penalty variable for not being able to charge with the required power
         self.variables['p_demand_pen'] = [[None for t in self.time_steps] for i in range(len(self.batteries))]
         for i, bat in enumerate(self.batteries):
             if bat.p_demand is not None:
@@ -184,7 +184,7 @@ class Optimizer:
                     if self.batteries[i].s_goal[t] > 0:
                         # negative target function contribution in a maximizing optimization
                         objective += - self.goal_penalty_energy * self.variables['s_goal_pen'][i][t]
-            # unmet charging demand due to fully loaded battery
+            # unmet charging demand due to battery reaching maximum SOC
             if bat.p_demand is not None:
                 for t in self.time_steps:
                     objective += - self.goal_penalty_power \
