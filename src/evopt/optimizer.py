@@ -10,11 +10,13 @@ class OptimizationStrategy:
     charging_strategy: str
     discharging_strategy: str
 
+
 @dataclass
 class GridConfig:
     p_max_imp: float
     p_max_exp: float
     prc_p_exc_imp: float
+
 
 @dataclass
 class BatteryConfig:
@@ -76,7 +78,7 @@ class Optimizer:
         self.grid_p_imp_pen = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
         if self.grid.prc_p_exc_imp is not None:
             self.grid_p_imp_pen = self.grid.prc_p_exc_imp
-        self.grid_p_exp_pen =  np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
+        self.grid_p_exp_pen = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
 
     def create_model(self):
         """
@@ -143,10 +145,10 @@ class Optimizer:
         # penalty variables for exceeding grid power limits
         # for grid import
         if self.grid.p_max_imp is not None:
-            self.variables['p_imp_pen'] = [pulp.LpVariable(f"p_imp_pen_{t}", lowBound = 0) for t in self.time_steps] 
-        # for grid export 
+            self.variables['p_imp_pen'] = [pulp.LpVariable(f"p_imp_pen_{t}", lowBound=0) for t in self.time_steps]
+        # for grid export
         if self.grid.p_max_imp is not None:
-            self.variables['p_exp_pen'] = [pulp.LpVariable(f"p_exp_pen_{t}", lowBound = 0) for t in self.time_steps]
+            self.variables['p_exp_pen'] = [pulp.LpVariable(f"p_exp_pen_{t}", lowBound=0) for t in self.time_steps]
 
         # Binary variable: power flow direction to / from grid variables
         # these variables
@@ -207,16 +209,16 @@ class Optimizer:
             if bat.p_demand is not None:
                 for t in self.time_steps:
                     objective += - self.goal_penalty_power \
-                                * self.variables['p_demand_pen'][i][t] \
-                                * (1 + (self.T - t)/self.T)
+                        * self.variables['p_demand_pen'][i][t] \
+                        * (1 + (self.T - t)/self.T)
         # penalties for grid power limits that cannot be met
         for t in self.time_steps:
             if self.grid.p_max_imp is not None:
                 # negative target function contribution in a maximizing optimization
-                objective += - self.grid_p_imp_pen * self.variables['p_imp_pen'][t]    
+                objective += - self.grid_p_imp_pen * self.variables['p_imp_pen'][t]
             if self.grid.p_max_exp is not None:
                 # negative target function contribution in a maximizing optimization
-                objective += - self.grid_p_exp_pen * self.variables['p_exp_pen'][t]           
+                objective += - self.grid_p_exp_pen * self.variables['p_exp_pen'][t]
 
         # Secondary strategies to implement preferences without impact to actual cost
         # prefer charging first, then grid export
@@ -339,7 +341,7 @@ class Optimizer:
         # limit grid export power
         if self.grid.p_max_exp is not None:
             for t in self.time_steps:
-                self.problem += self.variables['e'][t] + self.variables['p_exp_pen'][t]  <= self.grid.p_max_exp
+                self.problem += self.variables['e'][t] + self.variables['p_exp_pen'][t] <= self.grid.p_max_exp
 
     def solve(self) -> Dict:
         """
