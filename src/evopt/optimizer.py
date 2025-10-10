@@ -147,7 +147,7 @@ class Optimizer:
         if self.grid.p_max_imp is not None:
             self.variables['p_imp_pen'] = [pulp.LpVariable(f"p_imp_pen_{t}", lowBound=0) for t in self.time_steps]
         # for grid export
-        if self.grid.p_max_imp is not None:
+        if self.grid.p_max_exp is not None:
             self.variables['p_exp_pen'] = [pulp.LpVariable(f"p_exp_pen_{t}", lowBound=0) for t in self.time_steps]
 
         # Binary variable: power flow direction to / from grid variables
@@ -248,17 +248,30 @@ class Optimizer:
 
         self.time_steps = range(self.T)
 
-        # Constraint (2): Power balance
+        # Constraint (2): Power balance for each time step
         for t in self.time_steps:
+            # battery charge + discharge balance
             battery_net_discharge = 0
             for i, bat in enumerate(self.batteries):
                 battery_net_discharge += (- self.variables['c'][i][t]
                                           + self.variables['d'][i][t])
 
+            # grid import: if there is a limit, the power exceeding the limit
+            # is going to the penalty variable
+            p_grid_imp = self.variables['n'][t]
+            if self.grid.p_max_imp is not None:
+                p_grid_imp = self.variables['n'][t]+self.variables['p_imp_pen'][t]
+
+            # grid export: if there is a limit, the power exceeding the limit
+            # is going to the penalty variable
+            p_grid_exp = self.variables['e'][t]
+            if self.grid.p_max_exp is not None:
+                p_grid_exp = self.variables['e'][t]+self.variables['p_exp_pen'][t]
+
             self.problem += (battery_net_discharge
                              + self.time_series.ft[t]
-                             + self.variables['n'][t]
-                             == self.variables['e'][t]
+                             + p_grid_imp
+                             == p_grid_exp
                              + self.time_series.gt[t])
 
         # Constraint (3): Battery dynamics
@@ -336,12 +349,12 @@ class Optimizer:
         # limit grid import power
         if self.grid.p_max_imp is not None:
             for t in self.time_steps:
-                self.problem += self.variables['n'][t] + self.variables['p_imp_pen'][t] <= self.grid.p_max_imp
+                self.problem += self.variables['n'][t] <= self.grid.p_max_imp
 
         # limit grid export power
         if self.grid.p_max_exp is not None:
             for t in self.time_steps:
-                self.problem += self.variables['e'][t] + self.variables['p_exp_pen'][t] <= self.grid.p_max_exp
+                self.problem += self.variables['e'][t] <= self.grid.p_max_exp
 
     def solve(self) -> Dict:
         """
