@@ -75,7 +75,7 @@ time_series_model = api.model('TimeSeries', {
 
 optimization_input_model = api.model('OptimizationInput', {
     'strategy': fields.Nested(strategy_model, required=False, description='Optimization strategy'),
-    'grid': fields.Nested(grid_model, required=False, description='Grid import and export configuration')
+    'grid': fields.Nested(grid_model, required=False, description='Grid import and export configuration'),
     'batteries': fields.List(fields.Nested(battery_config_model), required=True, description='Battery configurations'),
     'time_series': fields.Nested(time_series_model, required=True, description='Time series data'),
     'eta_c': fields.Float(required=False, default=0.95, description='Charging efficiency'),
