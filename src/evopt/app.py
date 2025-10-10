@@ -46,9 +46,9 @@ strategy_model = api.model('OptimizationStrategy', {
 })
 
 grid_model = api.model('GridConfig', {
-    'p_max_imp': fields.Float(required=True, description='Maximum grid import power in W'),
-    'p_max_exp': fields.Float(required=True, description='Maximum grid export power in W'),
-    'prc_p_imp_exc': fields.Float(required=True, description='price per W to consider in case the import limit is exceeded. ')
+    'p_max_imp': fields.Float(required=False, description='Maximum grid import power in W'),
+    'p_max_exp': fields.Float(required=False, description='Maximum grid export power in W'),
+    'prc_p_imp_exc': fields.Float(required=False, description='price per W to consider in case the import limit is exceeded. ')
 })
 
 battery_config_model = api.model('BatteryConfig', {
