@@ -1,7 +1,8 @@
-import pulp
-import numpy as np
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+import numpy as np
+import pulp
 
 
 @dataclass
@@ -41,7 +42,7 @@ class TimeSeriesData:
 
 class Optimizer:
     """
-    Optimizer class building the MILP model from the input data, and provides 
+    Optimizer class building the MILP model from the input data, and provides
     solve() function to run optimization and return the results
     """
 
@@ -91,7 +92,7 @@ class Optimizer:
 
     def _setup_variables(self):
         """
-        Set up the variables of the milp optimizer
+        Set up the variables of the MILP optimizer
         """
 
         # Charging power variables [Wh]
@@ -119,21 +120,21 @@ class Optimizer:
             ]
 
         # penalty variable for not reaching given charge goals
-        # variables are kept in a matrix Batteries X Timesteps, only those elements will have an 
+        # variables are kept in a matrix Batteries X time steps, only those elements will have an
         # entry != None that have a SOC goal > 0 defined in the input data
         self.variables['s_goal_pen'] = [[None for t in self.time_steps] for i in range(len(self.batteries))]
         for i, bat in enumerate(self.batteries):
             if self.batteries[i].s_goal is not None:
                 for t in self.time_steps:
                     if self.batteries[i].s_goal[t] > 0:
-                        self.variables['s_goal_pen'][i][t] = pulp.LpVariable(f"s_goal_pen_{i}_{t}", lowBound = 0)
-        
+                        self.variables['s_goal_pen'][i][t] = pulp.LpVariable(f"s_goal_pen_{i}_{t}", lowBound=0)
+
         # penalty variable for not being able to charge with the required power
         self.variables['p_demand_pen'] = [[None for t in self.time_steps] for i in range(len(self.batteries))]
         for i, bat in enumerate(self.batteries):
             if bat.p_demand is not None:
                 for t in self.time_steps:
-                    self.variables['p_demand_pen'][i][t] = pulp.LpVariable(f"p_demand_pen_{i}_{t}", lowBound = 0)
+                    self.variables['p_demand_pen'][i][t] = pulp.LpVariable(f"p_demand_pen_{i}_{t}", lowBound=0)
 
         # Grid import/export variables [Wh]
         self.variables['n'] = [pulp.LpVariable(f"n_{t}", lowBound=0) for t in self.time_steps]
@@ -194,7 +195,7 @@ class Optimizer:
         for i, bat in enumerate(self.batteries):
             objective += self.variables['s'][i][-1] * bat.p_a
 
-        # Penalites for charging goals that cannot be met
+        # Penalties for goals that cannot be met
         for i, bat in enumerate(self.batteries):
             # unmet battery charging goals
             if self.batteries[i].s_goal is not None:
@@ -265,20 +266,20 @@ class Optimizer:
                 self.problem += (self.variables['s'][i][0]
                                  == bat.s_initial
                                  + self.eta_c * self.variables['c'][i][0]
-                                 - (1/self.eta_d) * self.variables['d'][i][0])
+                                 - (1 / self.eta_d) * self.variables['d'][i][0])
 
             # State of charge evolution
             for t in range(1, self.T):
                 self.problem += (self.variables['s'][i][t]
-                                 == self.variables['s'][i][t-1]
+                                 == self.variables['s'][i][t - 1]
                                  + self.eta_c * self.variables['c'][i][t]
-                                 - (1/self.eta_d) * self.variables['d'][i][t])
+                                 - (1 / self.eta_d) * self.variables['d'][i][t])
 
             # Constraint (6): Battery SOC goal constraints (for t > 0)
             if bat.s_goal is not None:
                 for t in range(1, self.T):
                     if bat.s_goal[t] > 0:
-                        self.problem += (self.variables['s'][i][t] 
+                        self.problem += (self.variables['s'][i][t]
                                          + self.variables['s_goal_pen'][i][t] >= bat.s_goal[t])
 
             # Constraint: Minimum battery charge demand (for t > 0)
@@ -298,14 +299,13 @@ class Optimizer:
                                          * self.variables['z_c'][i][t])
                         self.problem += (self.variables['c'][i][t] <= self.M * self.variables['z_c'][i][t])
 
-            else:
-                # Constraint (7): Minimum charge power limits if there is not charge demand
-                if bat.c_min > 0:
-                    for t in self.time_steps:
-                        # Lower bound: either 0 or at least c_min
-                        self.problem += (self.variables['c'][i][t] >= bat.c_min * self.time_series.dt[t] / 3600.
-                                         * self.variables['z_c'][i][t])
-                        self.problem += (self.variables['c'][i][t] <= self.M * self.variables['z_c'][i][t])
+            # Constraint (7): Minimum charge power limits if there is not charge demand
+            elif bat.c_min > 0:
+                for t in self.time_steps:
+                    # Lower bound: either 0 or at least c_min
+                    self.problem += (self.variables['c'][i][t] >= bat.c_min * self.time_series.dt[t] / 3600.
+                                     * self.variables['z_c'][i][t])
+                    self.problem += (self.variables['c'][i][t] <= self.M * self.variables['z_c'][i][t])
 
             # control battery charging from grid
             if not bat.charge_from_grid:

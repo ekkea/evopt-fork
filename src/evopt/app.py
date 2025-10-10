@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
-from flask_restx import Api, Resource, fields
 import os
+
 import jwt
-from optimizer import Optimizer, OptimizationStrategy, GridConfig, BatteryConfig, TimeSeriesData
+from flask import Flask, jsonify, request
+from flask_restx import Api, Resource, fields
+
+from .optimizer import BatteryConfig, GridConfig, OptimizationStrategy, Optimizer, TimeSeriesData
 
 app = Flask(__name__)
 
@@ -43,6 +45,12 @@ strategy_model = api.model('OptimizationStrategy', {
     'discharging_strategy': fields.String(required=False, description='Sets a strategy for discharging in situations where choices are cost neutral.')
 })
 
+grid_model = api.model('GridConfig', {
+    'p_max_imp': fields.Float(required=True, description='Maximum grid import power in W'),
+    'p_max_exp': fields.Float(required=True, description='Maximum grid export power in W'),
+    'prc_p_imp_exc': fields.Float(required=True, description='price per W to consider in case the import limit is exceeded. ')
+})
+
 battery_config_model = api.model('BatteryConfig', {
     'charge_from_grid': fields.Boolean(required=False, description='Controls whether the battery can be charged from the grid.'),
     'discharge_to_grid': fields.Boolean(required=False, description='Controls whether the battery can discharge to grid.'),
@@ -67,6 +75,7 @@ time_series_model = api.model('TimeSeries', {
 
 optimization_input_model = api.model('OptimizationInput', {
     'strategy': fields.Nested(strategy_model, required=False, description='Optimization strategy'),
+    'grid': fields.Nested(grid_model, required=False, description='Grid import and export configuration')
     'batteries': fields.List(fields.Nested(battery_config_model), required=True, description='Battery configurations'),
     'time_series': fields.Nested(time_series_model, required=True, description='Time series data'),
     'eta_c': fields.Float(required=False, default=0.95, description='Charging efficiency'),
