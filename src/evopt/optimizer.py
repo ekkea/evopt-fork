@@ -373,16 +373,16 @@ class Optimizer:
         status = pulp.LpStatus[self.problem.status]
 
         # get limit violations
-        grid_imp_limit_violated=False
-        grid_imp_overshoot=[]
+        grid_imp_limit_violated = False
+        grid_imp_overshoot = []
         if self.grid.p_max_imp is not None:
-            grid_imp_limit_violated=(np.max([pulp.value(var) for var in self.variables['p_imp_pen']]) > 0)
-            grid_imp_overshoot=[pulp.value(var) for var in self.variables['p_imp_pen']]
-        grid_exp_limit_hit=False
-        grid_exp_overshoot=[]
+            grid_imp_limit_violated = (np.max([pulp.value(var) for var in self.variables['p_imp_pen']]) > 0)
+            grid_imp_overshoot = [pulp.value(var) for var in self.variables['p_imp_pen']]
+        grid_exp_limit_hit = False
+        grid_exp_overshoot = []
         if self.grid.p_max_exp is not None:
-            grid_exp_limit_hit=(np.max([pulp.value(var) for var in self.variables['p_exp_pen']]) > 0)
-            grid_exp_overshoot=[pulp.value(var) for var in self.variables['p_exp_pen']]
+            grid_exp_limit_hit = (np.max([pulp.value(var) for var in self.variables['p_exp_pen']]) > 0)
+            grid_exp_overshoot = [pulp.value(var) for var in self.variables['p_exp_pen']]
 
         if status == 'Optimal':
             result = {
