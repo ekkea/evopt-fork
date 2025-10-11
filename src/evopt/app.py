@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
-from flask_restx import Api, Resource, fields
 import os
+
 import jwt
-from optimizer import Optimizer, OptimizationStrategy, BatteryConfig, TimeSeriesData
+from flask import Flask, jsonify, request
+from flask_restx import Api, Resource, fields
+
+from .optimizer import BatteryConfig, OptimizationStrategy, Optimizer, TimeSeriesData
 
 app = Flask(__name__)
 
