@@ -420,8 +420,8 @@ class Optimizer:
         # grid import and export if no demand rate is active
         # if a limit is set and exceeded, this is the part that is actually imported / exported.
         # the exceeding portion is captured in 'p_imp_pen' and / or 'p_exp_pen'
-        grid_import=[pulp.value(var) for var in self.variables['n']]
-        grid_export=[pulp.value(var) for var in self.variables['e']]
+        grid_import = [pulp.value(var) for var in self.variables['n']]
+        grid_export = [pulp.value(var) for var in self.variables['e']]
         # if a demand rate is active, the actual import power is both parts, 'n' and 'p_imp_pen'
         if self.is_grid_demand_rate_active:
             for t in self.time_steps:
