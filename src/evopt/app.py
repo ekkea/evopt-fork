@@ -89,13 +89,21 @@ battery_result_model = api.model('BatteryResult', {
     'state_of_charge': fields.List(fields.Float, description='State of charge at each time step (Wh)')
 })
 
+limit_violation_result_model = api.model('LimitViolationResult', {
+    'grid_import_limit_exceeded': fields.Boolean(description='The energy demand could only be satisfied by violating the grid import limit.'),
+    'grid_export_limit_hit': fields.Boolean(description='The solar yield was reduced due to the limitation of grid export power.')
+})
+
 optimization_result_model = api.model('OptimizationResult', {
     'status': fields.String(description='Optimization status'),
     'objective_value': fields.Float(description='Optimal objective function value'),
+    'limit_violations': fields.Nested(limit_violation_result_model, description='Collection of flags signalling the violation of defined limits'),
     'batteries': fields.List(fields.Nested(battery_result_model), description='Battery optimization results'),
     'grid_import': fields.List(fields.Float, description='Energy imported from grid at each time step (Wh)'),
     'grid_export': fields.List(fields.Float, description='Energy exported to grid at each time step (Wh)'),
-    'flow_direction': fields.List(fields.Integer, description='Binary flow direction (1=export, 0=import)')
+    'flow_direction': fields.List(fields.Integer, description='Binary flow direction (1=export, 0=import)'),
+    'grid_import_overshoot': fields.List(fields.Float, description='Energy above the power limit imported from grid at each time step (Wh)'),
+    'grid_export_overshoot': fields.List(fields.Float, description='Energy not exported due to hitting the grid export power limit at each time step (Wh)')
 })
 
 

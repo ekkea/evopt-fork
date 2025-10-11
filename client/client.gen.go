@@ -115,6 +115,15 @@ type GridConfig struct {
 	PrcPImpExc float32 `json:"prc_p_imp_exc,omitempty"`
 }
 
+// LimitViolationResult defines model for LimitViolationResult.
+type LimitViolationResult struct {
+	// GridExportLimitHit The solar yield was reduced due to the limitation of grid export power.
+	GridExportLimitHit bool `json:"grid_export_limit_hit,omitempty"`
+
+	// GridImportLimitExceeded The energy demand could only be satisfied by violating the grid import limit.
+	GridImportLimitExceeded bool `json:"grid_import_limit_exceeded,omitempty"`
+}
+
 // OptimizationInput defines model for OptimizationInput.
 type OptimizationInput struct {
 	// Batteries Configuration for all batteries in the system
@@ -143,8 +152,15 @@ type OptimizationResult struct {
 	// GridExport Energy exported to grid at each time step (Wh)
 	GridExport []float32 `json:"grid_export,omitempty"`
 
+	// GridExportOvershoot Energy not exported due to hitting the grid export power limit at each time step (Wh)
+	GridExportOvershoot []float32 `json:"grid_export_overshoot,omitempty"`
+
 	// GridImport Energy imported from grid at each time step (Wh)
 	GridImport []float32 `json:"grid_import,omitempty"`
+
+	// GridImportOvershoot Energy above the power limit imported from grid at each time step (Wh)
+	GridImportOvershoot []float32            `json:"grid_import_overshoot,omitempty"`
+	LimitViolations     LimitViolationResult `json:"limit_violations,omitempty"`
 
 	// ObjectiveValue Optimal objective function value (economic benefit in currency units). Null if not optimal.
 	ObjectiveValue float32 `json:"objective_value"`

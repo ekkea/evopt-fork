@@ -372,14 +372,32 @@ class Optimizer:
         # Extract results
         status = pulp.LpStatus[self.problem.status]
 
+        # get limit violations
+        grid_imp_limit_violated=False
+        grid_imp_overshoot=[]
+        if self.grid.p_max_imp is not None:
+            grid_imp_limit_violated=(np.max([pulp.value(var) for var in self.variables['p_imp_pen']]) > 0)
+            grid_imp_overshoot=[pulp.value(var) for var in self.variables['p_imp_pen']]
+        grid_exp_limit_hit=False
+        grid_exp_overshoot=[]
+        if self.grid.p_max_exp is not None:
+            grid_exp_limit_hit=(np.max([pulp.value(var) for var in self.variables['p_exp_pen']]) > 0)
+            grid_exp_overshoot=[pulp.value(var) for var in self.variables['p_exp_pen']]
+
         if status == 'Optimal':
             result = {
                 'status': status,
                 'objective_value': pulp.value(self.problem.objective),
+                'limit_violations': {
+                    'grid_import_limit_exceeded': grid_imp_limit_violated,
+                    'grid_export_limit_hit': grid_exp_limit_hit
+                },
                 'batteries': [],
                 'grid_import': [pulp.value(var) for var in self.variables['n']],
                 'grid_export': [pulp.value(var) for var in self.variables['e']],
-                'flow_direction': []
+                'flow_direction': [],
+                'grid_import_overshoot': grid_imp_overshoot,
+                'grid_export_overshoot': grid_exp_overshoot
             }
 
             # Extract battery results
@@ -403,8 +421,14 @@ class Optimizer:
             return {
                 'status': status,
                 'objective_value': None,
+                'limit_violations': {
+                    'grid_import_limit_exceeded': False,
+                    'grid_export_limit_hit': False
+                },
                 'batteries': [],
                 'grid_import': [],
                 'grid_export': [],
-                'flow_direction': []
+                'flow_direction': [],
+                'grid_import_overshoot': [],
+                'grid_export_overshoot': []
             }
