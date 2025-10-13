@@ -217,7 +217,7 @@ class Optimizer:
                     self.variables['n'][t]
                     # import beyond the threshold
                     + self.variables['p_imp_pen'][t] * self.time_series.dt[t] / 3600
-                    ) * self.time_series.p_N[t]
+                ) * self.time_series.p_N[t]
             else:
                 # standard case
                 objective -= self.variables['n'][t] * self.time_series.p_N[t]
@@ -468,7 +468,7 @@ class Optimizer:
         if status == 'Optimal':
             result = {
                 'status': status,
-                'objective_value': pulp.value(self.problem.objective),
+                'objective_value': self.get_clean_objective_value(),
                 'limit_violations': {
                     'grid_import_limit_exceeded': grid_imp_limit_violated,
                     'grid_export_limit_hit': grid_exp_limit_hit
@@ -514,4 +514,35 @@ class Optimizer:
                 'grid_export_overshoot': []
             }
 
+    def get_clean_objective_value(self):
+        '''
+        recalculate the objective value without penalties and strategy icentives
+        '''
+        clean_objective = 0
+        # Grid import cost (negative because we want to minimize cost) [currency unit]
+        for t in self.time_steps:
+            if self.grid.p_max_imp is not None:
+                clean_objective -= (
+                    # grid import up to the demand rate threshold
+                    self.variables['n'][t]
+                    # import beyond the threshold
+                    + pulp.value(self.variables['p_imp_pen'][t]) * self.time_series.dt[t] / 3600
+                ) * self.time_series.p_N[t]
+            else:
+                # standard case
+                clean_objective -= pulp.value(self.variables['n'][t]) * self.time_series.p_N[t]
 
+        # Grid export revenue [currency unit]
+        for t in self.time_steps:
+            clean_objective += pulp.value(self.variables['e'][t]) * self.time_series.p_E[t]
+
+        # Final state of charge value [currency unit]
+        for i, bat in enumerate(self.batteries):
+            clean_objective += pulp.value(self.variables['s'][i][-1]) * bat.p_a
+
+        # charge for import power demand rate. The demand rate is applied to the maximum
+        # power draw beyond the threshold within the time horizon.
+        if self.is_grid_demand_rate_active:
+            clean_objective += - self.grid.prc_p_exc_imp * pulp.value(self.variables['p_max_imp_exc'])
+
+        return clean_objective
