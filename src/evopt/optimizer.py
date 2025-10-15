@@ -533,7 +533,7 @@ class Optimizer:
             if self.grid.p_max_imp is not None:
                 clean_objective -= (
                     # grid import up to the demand rate threshold
-                    self.variables['n'][t]
+                    pulp.value(self.variables['n'][t])
                     # import beyond the threshold
                     + pulp.value(self.variables['p_imp_pen'][t]) * self.time_series.dt[t] / 3600
                 ) * self.time_series.p_N[t]
@@ -547,11 +547,12 @@ class Optimizer:
 
         # Final state of charge value [currency unit]
         for i, bat in enumerate(self.batteries):
-            clean_objective += pulp.value(self.variables['s'][i][-1]) * bat.p_a
+            clean_objective -= pulp.value(self.variables['s'][i][-1]) * bat.p_a
 
         # charge for import power demand rate. The demand rate is applied to the maximum
         # power draw beyond the threshold within the time horizon.
         if self.is_grid_demand_rate_active:
             clean_objective += - self.grid.prc_p_exc_imp * pulp.value(self.variables['p_max_imp_exc'])
+        print(clean_objective)
 
         return clean_objective
