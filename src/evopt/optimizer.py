@@ -106,7 +106,8 @@ class Optimizer:
 
         self._setup_variables()
         self._setup_target_function()
-        self._add_constraints()
+        self._add_energy_balance_constraints()
+        self._add_battery_constraints()
 
     def _setup_variables(self):
         """
@@ -297,9 +298,9 @@ class Optimizer:
 
         self.problem += objective
 
-    def _add_constraints(self):
+    def _add_energy_balance_constraints(self):
         """
-        Add all constraints to the model.
+        Add constraints related to the energy balance to the model.
         """
 
         self.time_steps = range(self.T)
@@ -340,6 +341,53 @@ class Optimizer:
                              + e_grid_imp
                              == e_grid_exp
                              + self.time_series.gt[t])
+
+        # Constraints (4)-(5): Grid flow direction
+        for t in self.time_steps:
+            # Export constraint
+            self.problem += self.variables['e'][t] <= self.M * self.variables['y'][t]
+            # Import constraint
+            self.problem += self.variables['n'][t] <= self.M * (1 - self.variables['y'][t])
+
+        # limit regular grid import power
+        if self.grid.p_max_imp is not None:
+            if self.is_grid_demand_rate_active:
+                # limit the demand rate free portion of the power
+                for t in self.time_steps:
+                    self.problem += self.variables['n'][t] <= self.grid.p_max_imp * self.time_series.dt[t] / 3600
+                    self.problem += (self.grid.p_max_imp * self.time_series.dt[t] / 3600 - self.variables['n'][t]
+                                     <= self.M * self.variables['z_imp_lim'][t])
+                    self.problem += (self.variables['e_imp_lim_exc'][t]
+                                     <= self.M * (1 - self.variables['z_imp_lim'][t]))
+            else:
+                # limit the actual import power
+                for t in self.time_steps:
+                    self.problem += self.variables['n'][t] <= self.grid.p_max_imp * self.time_series.dt[t] / 3600
+                    self.problem += (self.grid.p_max_imp * self.time_series.dt[t] / 3600 - self.variables['n'][t]
+                                     <= self.M * self.variables['z_imp_lim'][t])
+                    self.problem += (self.variables['e_imp_lim_exc'][t]
+                                     <= self.M * (1 - self.variables['z_imp_lim'][t]))
+
+        # limit regular grid export power
+        if self.grid.p_max_exp is not None:
+            for t in self.time_steps:
+                self.problem += self.variables['e'][t] <= self.grid.p_max_exp * self.time_series.dt[t] / 3600
+                self.problem += (self.grid.p_max_exp * self.time_series.dt[t] / 3600 - self.variables['e'][t]
+                                 <= self.M * self.variables['z_exp_lim'][t])
+                self.problem += (self.variables['e_exp_lim_exc'][t]
+                                 <= self.M * (1 - self.variables['z_exp_lim'][t]))
+
+        # if demand rate is applied, the maximum grid import power value
+        # of all time steps drives the demand rate charge
+        if self.is_grid_demand_rate_active:
+            for t in self.time_steps:
+                self.problem += self.variables['e_imp_lim_exc'][t] \
+                    <= self.variables['p_max_imp_exc'] * self.time_series.dt[t] / 3600
+
+    def _add_battery_constraints(self):
+        """
+        Add constraints related to battery behavior to the model.
+        """
 
         # Constraint (3): Battery dynamics
         for i, bat in enumerate(self.batteries):
@@ -405,48 +453,6 @@ class Optimizer:
                 self.problem += self.variables['d'][i][t] <= self.M * self.variables['z_cd'][i][t]
                 # Charge constraint
                 self.problem += self.variables['c'][i][t] <= self.M * (1 - self.variables['z_cd'][i][t])
-
-        # Constraints (4)-(5): Grid flow direction
-        for t in self.time_steps:
-            # Export constraint
-            self.problem += self.variables['e'][t] <= self.M * self.variables['y'][t]
-            # Import constraint
-            self.problem += self.variables['n'][t] <= self.M * (1 - self.variables['y'][t])
-
-        # limit regular grid import power
-        if self.grid.p_max_imp is not None:
-            if self.is_grid_demand_rate_active:
-                # limit the demand rate free portion of the power
-                for t in self.time_steps:
-                    self.problem += self.variables['n'][t] <= self.grid.p_max_imp * self.time_series.dt[t] / 3600
-                    self.problem += (self.grid.p_max_imp * self.time_series.dt[t] / 3600 - self.variables['n'][t]
-                                    <= self.M * self.variables['z_imp_lim'][t])
-                    self.problem += (self.variables['e_imp_lim_exc'][t]
-                                    <= self.M * (1 - self.variables['z_imp_lim'][t]))
-            else:
-                # limit the actual import power
-                for t in self.time_steps:
-                    self.problem += self.variables['n'][t] <= self.grid.p_max_imp * self.time_series.dt[t] / 3600
-                    self.problem += (self.grid.p_max_imp * self.time_series.dt[t] / 3600 - self.variables['n'][t]
-                                    <= self.M * self.variables['z_imp_lim'][t])
-                    self.problem += (self.variables['e_imp_lim_exc'][t]
-                                    <= self.M * (1 - self.variables['z_imp_lim'][t]))
-
-        # limit regular grid export power
-        if self.grid.p_max_exp is not None:
-            for t in self.time_steps:
-                self.problem += self.variables['e'][t] <= self.grid.p_max_exp * self.time_series.dt[t] / 3600
-                self.problem += (self.grid.p_max_exp * self.time_series.dt[t] / 3600 - self.variables['e'][t]
-                                <= self.M * self.variables['z_exp_lim'][t] )
-                self.problem += (self.variables['e_exp_lim_exc'][t]
-                                <= self.M * (1 - self.variables['z_exp_lim'][t]))
-
-        # if demand rate is applied, the maximum grid import power value
-        # of all time steps drives the demand rate charge
-        if self.is_grid_demand_rate_active:
-            for t in self.time_steps:
-                self.problem += self.variables['e_imp_lim_exc'][t] \
-                                <= self.variables['p_max_imp_exc'] * self.time_series.dt[t] / 3600
 
     def solve(self) -> Dict:
         """
@@ -571,7 +577,7 @@ class Optimizer:
         # power draw beyond the threshold within the time horizon.
         if self.is_grid_demand_rate_active:
             clean_objective += - self.grid.prc_p_exc_imp \
-                                * pulp.value(self.variables['p_max_imp_exc'])
+                * pulp.value(self.variables['p_max_imp_exc'])
         print(clean_objective)
 
         return clean_objective
