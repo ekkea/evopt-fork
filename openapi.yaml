@@ -372,7 +372,7 @@ components:
           description: The energy demand could only be satisfied by violating the grid import limit.
         grid_export_limit_hit: 
           type: boolean
-          description: The solar yield was reduced due to the limitation of grid export power.
+          description: The solar yield in (Wh) that was reduced due to the limitation of grid export power.
 
     OptimizationResult:
       type: object
