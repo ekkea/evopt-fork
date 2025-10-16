@@ -571,7 +571,8 @@ class Optimizer:
 
         # Final state of charge value [currency unit]
         for i, bat in enumerate(self.batteries):
-            clean_objective -= pulp.value(self.variables['s'][i][-1]) * bat.p_a
+            clean_objective += (pulp.value(self.variables['s'][i][self.T-1])
+                                - pulp.value(self.variables['s'][i][0])) * bat.p_a
 
         # charge for import power demand rate. The demand rate is applied to the maximum
         # power draw beyond the threshold within the time horizon.
