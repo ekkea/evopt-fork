@@ -319,7 +319,7 @@
     "limit_violations": {
       "grid_import_limit_exceeded": true
     },
-    "objective_value": -7.0977945,
+    "objective_value": -7.0956674,
     "status": "Optimal"
   },
   "request": {
