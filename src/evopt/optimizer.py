@@ -391,7 +391,7 @@ class Optimizer:
         # lesser than the minimum SOC, maximum charging is forced until the min.
         # SOC is reached
         for i, bat in enumerate(self.batteries):
-            s_min_corr=bat.s_initial
+            s_min_corr = bat.s_initial
             for t in range(1, self.T):
                 s_min_corr += bat.c_max * self.time_series.dt[t] / 3600
                 s_min_corr = np.min([s_min_corr, bat.s_min])
