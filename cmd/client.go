@@ -118,40 +118,9 @@ func main() {
 	}
 
 	res := *resp.JSON200
-	b, _ := json.MarshalIndent(res, "", "  ")
-
-	// Write request and response into a file that can serve as a test case description
-	// Create the ./tmp directory if it does not exist
-	{
-		test_items := map[string]any{}
-		combined := map[string]interface{}{
-			"request":           req,
-			"expected_response": res,
-			"test_items":        test_items,
-		}
-		cb, err := json.MarshalIndent(combined, "", "  ")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Ensure tmp directory exists
-		if _, err := os.Stat("./tmp"); err != nil {
-			if os.IsNotExist(err) {
-				if err := os.Mkdir("tmp", 0755); err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				log.Fatal(err)
-			}
-		}
-
-		// Write combined JSON to file
-		if err := os.WriteFile("tmp/test_case.json", cb, 0666); err != nil {
-			log.Fatal(err)
-		}
-	}
 
 	if *vFlag {
+		b, _ := json.MarshalIndent(res, "", "  ")
 		fmt.Println(string(b))
 	}
 
