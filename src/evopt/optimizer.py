@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from tempfile import TemporaryDirectory
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -477,7 +478,9 @@ class Optimizer:
             threads=self.settings.num_threads,
             timeLimit=self.settings.time_limit,
         )
-        self.problem.solve(solver)
+        with TemporaryDirectory() as tmpdir:
+            solver.tmpDir = tmpdir
+            self.problem.solve(solver)
 
         # Extract results
         status = pulp.LpStatus[self.problem.status]
@@ -587,6 +590,5 @@ class Optimizer:
         if self.is_grid_demand_rate_active:
             clean_objective += - self.grid.prc_p_exc_imp \
                 * pulp.value(self.variables['p_max_imp_exc'])
-        print(clean_objective)
 
         return clean_objective
