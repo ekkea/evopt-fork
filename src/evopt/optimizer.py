@@ -82,7 +82,7 @@ class Optimizer:
         # scaling for penalty parameters. Make sure goal_penalty is always positive
         self.prc_e_goal_pen = np.min([self.max_import_price, 0.1e-3]) * 10e1
         self.prc_p_goal_pen = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
-        self.prc_soc_exc_pen = np.min([self.max_import_price, 0.1e-3]) * 10e1
+        self.prc_soc_exc_pen = np.min([self.max_import_price, 0.1e-3]) * 10e2
 
         # penalty for exceeding grid import limit. Result shall not become infeasible but report the violation
         # with helpful information
