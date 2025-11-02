@@ -406,7 +406,6 @@ class Optimizer:
                 self.problem += (self.variables['s_max_pen'][i][t] >= self.variables['s'][i][t] - bat.s_max)
                 self.problem += (self.variables['s_min_pen'][i][t] >= bat.s_min - self.variables['s'][i][t])
 
-
         # Constraint (3): Battery dynamics
         for i, bat in enumerate(self.batteries):
             # Initial state of charge
