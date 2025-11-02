@@ -300,8 +300,8 @@ class Optimizer:
         # charging and discharging priorities
         for i, bat in enumerate(self.batteries):
             for t in self.time_steps:
-                objective += self.variables['c'][i][t] * self.min_import_price * 15e-6 * (self.T - t) * bat.c_priority
-                objective += self.variables['d'][i][t] * self.min_import_price * 30e-6 * (self.T - t) * bat.c_priority
+                objective += self.variables['c'][i][t] * self.min_import_price * 5e-5 * (self.T - t) * bat.c_priority
+                objective += self.variables['d'][i][t] * self.min_import_price * 5e-5 * (self.T - t) * bat.c_priority
 
         self.problem += objective
 

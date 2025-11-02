@@ -261,7 +261,7 @@ components:
           minimum: 0
           maximum: 2
           default: 0
-          description: Charging and discharging priority compared to other batteries. 2 = highest priority.
+          description: Charging and discharging priority 0..2 compared to other batteries. 2 = highest priority.
 
     TimeSeries:
       type: object
