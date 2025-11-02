@@ -82,6 +82,7 @@ class Optimizer:
         # scaling for penalty parameters. Make sure goal_penalty is always positive
         self.prc_e_goal_pen = np.min([self.max_import_price, 0.1e-3]) * 10e1
         self.prc_p_goal_pen = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
+        self.prc_soc_exc_pen = np.min([self.max_import_price, 0.1e-3]) * 10e1
 
         # penalty for exceeding grid import limit. Result shall not become infeasible but report the violation
         # with helpful information
@@ -135,7 +136,7 @@ class Optimizer:
         self.variables['s'] = {}
         for i, bat in enumerate(self.batteries):
             self.variables['s'][i] = [
-                pulp.LpVariable(f"s_{i}_{t}", lowBound=0, upBound=bat.s_max)
+                pulp.LpVariable(f"s_{i}_{t}", lowBound=0)
                 for t in self.time_steps
             ]
 
@@ -155,6 +156,10 @@ class Optimizer:
             if bat.p_demand is not None:
                 for t in self.time_steps:
                     self.variables['p_demand_pen'][i][t] = pulp.LpVariable(f"p_demand_pen_{i}_{t}", lowBound=0)
+
+        # penalty variable for staying above max SOC and below min SOC
+        self.variables['s_max_pen'] = [[pulp.LpVariable(f"s_max_pen_{i}_{t}", lowBound=0) for t in self.time_steps] for i in range(len(self.batteries))]
+        self.variables['s_min_pen'] = [[pulp.LpVariable(f"s_min_pen_{i}_{t}", lowBound=0) for t in self.time_steps] for i in range(len(self.batteries))]
 
         # Grid import/export variables [Wh]
         self.variables['n'] = [pulp.LpVariable(f"n_{t}", lowBound=0) for t in self.time_steps]
@@ -246,6 +251,12 @@ class Optimizer:
         # power draw beyond the threshold within the time horizon.
         if self.is_grid_demand_rate_active:
             objective += - self.grid.prc_p_exc_imp * self.variables['p_max_imp_exc']
+
+        ############################################################################
+        # Penalties for exceeding battery SO limits at start
+        for i, bat in enumerate(self.batteries):
+            for t in self.time_steps:
+                objective += - self.prc_soc_exc_pen * (self.variables['s_max_pen'][i][t] + self.variables['s_min_pen'][i][t])
 
         ############################################################################
         # Penalties for goals that cannot be met
@@ -387,16 +398,14 @@ class Optimizer:
         """
         Add constraints related to battery behavior to the model.
         """
-
-        # contraint for the min SOC. If the battery starts with an tinitial SOC
-        # lesser than the minimum SOC, maximum charging is forced until the min.
-        # SOC is reached
+        # constraint for the max and min SOC. If the battery starts with an initial SOC
+        # greater than the maximum SOC or lesser than min SOC, maximum discharging is forced until the max.
+        # SOC is reached or max. charing will be forced until min SOC is reached.
         for i, bat in enumerate(self.batteries):
-            s_min_corr = bat.s_initial
-            for t in range(1, self.T):
-                s_min_corr += bat.c_max * self.time_series.dt[t] / 3600
-                s_min_corr = np.min([s_min_corr, bat.s_min])
-                self.problem += (self.variables['s'][i][t] >= s_min_corr)
+            for t in range(0, self.T):
+                self.problem += (self.variables['s_max_pen'][i][t] >= self.variables['s'][i][t] - bat.s_max)
+                self.problem += (self.variables['s_min_pen'][i][t] >= bat.s_min - self.variables['s'][i][t])
+
 
         # Constraint (3): Battery dynamics
         for i, bat in enumerate(self.batteries):
