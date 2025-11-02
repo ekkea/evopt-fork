@@ -25,6 +25,7 @@ class GridConfig:
 class BatteryConfig:
     charge_from_grid: bool
     discharge_to_grid: bool
+    s_capacity: float
     s_min: float
     s_max: float
     s_initial: float
@@ -136,7 +137,7 @@ class Optimizer:
         self.variables['s'] = {}
         for i, bat in enumerate(self.batteries):
             self.variables['s'][i] = [
-                pulp.LpVariable(f"s_{i}_{t}", lowBound=0)
+                pulp.LpVariable(f"s_{i}_{t}", lowBound=0, upBound=bat.s_capacity)
                 for t in self.time_steps
             ]
 
