@@ -99,8 +99,7 @@ if action=="run":
 
         print(tabulate(df, headers='keys', tablefmt='psql',  floatfmt=".3f" ))
 
-        n_plots = 3
-        fig, axs = plt.subplots(n_plots, figsize=(16, 12))
+        fig, axs = plt.subplots(3, figsize=(16, 12), height_ratios=[1,2,1])
 
         axs[0].set_ylabel("SOC")
         axs[0].set
@@ -118,9 +117,9 @@ if action=="run":
         axs[1].set_ylabel("Power")
         for i, bat in enumerate(response.json["batteries"]):
             axs[1].stairs(df[f"P_bat{i}"], ts_time_ex, label=f"P_bat{i} [kW]")
+        axs[1].stairs(df["P_grid"], ts_time_ex, label="P_grid [kW]")
         axs[1].stairs(df["P_solar"], ts_time_ex, label="P_solar [kW]")
         axs[1].stairs(df["P_demand"], ts_time_ex, label="P_demand [kW]")
-        axs[1].stairs(df["P_grid"], ts_time_ex, label="P_grid [kW]")
         axs[1].xaxis.set_minor_locator(mdates.HourLocator())
         axs[1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         axs[1].grid()
@@ -129,8 +128,6 @@ if action=="run":
         axs[2].set_ylabel("Deviation to Expected")
         for i, bat in enumerate(response.json["batteries"]):
             axs[2].stairs(df[f"P_bat{i}_dev"], ts_time_ex, label=f"P_bat{i}_dev [1]")
-        #axs[2].stairs(df["P_solar_dev"], ts_time_ex, label="P_solar_dev [1]")
-        #axs[2].stairs(df["P_demand_dev"], ts_time_ex, label="P_demand_dev [1]")
         axs[2].stairs(df["P_grid_dev"], ts_time_ex, label="P_grid_dev [1]")
         axs[2].xaxis.set_minor_locator(mdates.HourLocator())
         axs[2].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
