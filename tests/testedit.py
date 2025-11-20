@@ -41,6 +41,15 @@ if action=="create":
     print(test_case)
     json.dump(test_case, fp=open(file_out,"w"))
 
+if action=="update":
+    request = json.loads(file_in.read_text())
+    response = client.post("/optimize/charge-schedule", json=request)
+    test_case = {}
+    test_case['request']=request
+    test_case['expected_response']=response.get_json()
+    print(test_case)
+    json.dump(test_case, fp=open(file_in,"w"))
+
 if action=="run":
     test_case = json.loads(file_in.read_text())
     if "request" not in test_case or "expected_response" not in test_case:
