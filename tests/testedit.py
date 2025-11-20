@@ -37,7 +37,7 @@ if action=="create":
     response = client.post("/optimize/charge-schedule", json=request)
     test_case = {}
     test_case['request']=request
-    test_case['response']=response.get_json()
+    test_case['expected_response']=response.get_json()
     print(test_case)
     json.dump(test_case, fp=open(file_out,"w"))
 
@@ -104,9 +104,9 @@ if action=="run":
         axs[0].set_ylabel("SOC")
         axs[0].set
         for i, bat in enumerate(response.json["batteries"]):
-            axs[0].stairs(df[f"SOC_bat{i}"], ts_time_ex, label=f"SOC_bat{i} [%]")
+            axs[0].stairs(df[f"SOC_bat{i}"], ts_time_ex, label=f"SOC_bat{i} [%]", linewidth=1.5)
         axs0_r=axs[0].twinx()
-        axs0_r.set_ylabel("price")
+        axs0_r.set_ylabel("Price")
         axs0_r.plot(df["time"], df["prc_import"], 'r+', label="prc_import [€/kWh]")
         axs0_r.plot(df["time"], df["prc_export"], 'b+', label="prc_export [€/kWh]")
         axs[0].xaxis.set_minor_locator(mdates.HourLocator())
@@ -116,10 +116,10 @@ if action=="run":
 
         axs[1].set_ylabel("Power")
         for i, bat in enumerate(response.json["batteries"]):
-            axs[1].stairs(df[f"P_bat{i}"], ts_time_ex, label=f"P_bat{i} [kW]")
-        axs[1].stairs(df["P_grid"], ts_time_ex, label="P_grid [kW]")
-        axs[1].stairs(df["P_solar"], ts_time_ex, label="P_solar [kW]")
-        axs[1].stairs(df["P_demand"], ts_time_ex, label="P_demand [kW]")
+            axs[1].stairs(df[f"P_bat{i}"], ts_time_ex, label=f"P_bat{i} [kW]", linewidth=1.5)
+        axs[1].stairs(df["P_grid"], ts_time_ex, label="P_grid [kW]", linewidth=1.5)
+        axs[1].stairs(df["P_solar"], ts_time_ex, label="P_solar [kW]", linewidth=1.5)
+        axs[1].stairs(df["P_demand"], ts_time_ex, label="P_demand [kW]", linewidth=1.5)
         axs[1].xaxis.set_minor_locator(mdates.HourLocator())
         axs[1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         axs[1].grid()
@@ -127,8 +127,8 @@ if action=="run":
 
         axs[2].set_ylabel("Deviation to Expected")
         for i, bat in enumerate(response.json["batteries"]):
-            axs[2].stairs(df[f"P_bat{i}_dev"], ts_time_ex, label=f"P_bat{i}_dev [1]")
-        axs[2].stairs(df["P_grid_dev"], ts_time_ex, label="P_grid_dev [1]")
+            axs[2].stairs(df[f"P_bat{i}_dev"], ts_time_ex, label=f"P_bat{i}_dev [1]", linewidth=1.5)
+        axs[2].stairs(df["P_grid_dev"], ts_time_ex, label="P_grid_dev [1]", linewidth=1.5)
         axs[2].xaxis.set_minor_locator(mdates.HourLocator())
         axs[2].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         axs[2].grid()
