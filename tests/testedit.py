@@ -4,8 +4,11 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+
+from tabulate import tabulate
 
 from evopt.app import app
 
@@ -51,25 +54,34 @@ if action=="run":
         ts_input=request["time_series"]
         dt=ts_input["dt"]
         ts_time=np.cumsum(dt)
-        ts_solar=ts_input["ft"]
-        ts_demand=ts_input["gt"]
+        #ts_time=np.subtract(np.cumsum(dt), dt[0])
+        ts_solar=np.divide(ts_input["ft"],ts_input["dt"])
+        ts_demand=np.negative(np.divide(ts_input["gt"],ts_input["dt"]))
         # Create DataFrame
         df = pd.DataFrame({
-            "time_s": ts_time,
-            "ft": ts_solar,
-            "gt": ts_demand
+            "time": ts_time,
+            "P_solar": ts_solar,
+            "P_demand": ts_demand
         })
+        df['time'] = pd.to_datetime(df['time'], unit='s')
 
-        print(df.head())
+        print(tabulate(df, headers='keys', tablefmt='psql',  floatfmt=".3f" ))
+        #print(df.info())
 
-        plt.figure(figsize=(12,6))
-        plt.plot(df["time_s"], df["ft"], label="ft")
-        plt.plot(df["time_s"], df["gt"], label="gt")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Value")
-        plt.title("Time Series ft and gt")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
+        fig, axs = plt.subplots(2, figsize=(16,8))
+        axs[0].plot(df["time"], df["P_solar"], label="P_solar")
+        axs[0].plot(df["time"], df["P_demand"], label="P_demand")
+        axs[0].xaxis.set_minor_locator(mdates.HourLocator())
+        axs[0].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        axs[0].grid()
+        axs[0].legend()
+        axs[1].plot(df["time"], df["P_demand"], label="P_demand")
+        #plt.plot(df["time"], df["P_solar"], label="ft")
+        #plt.plot(df["time"], df["P_demand"], label="gt")
+        #plt.title("Solar Gain and Demand")
+        #plt.gcf().autofmt_xdate()
+        #plt.legend()
+        #plt.grid(True)
+        #plt.tight_layout()
         plt.show()
 # response = test_data.get("expected_response")
