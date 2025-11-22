@@ -13,20 +13,20 @@ from tabulate import tabulate
 from evopt.app import app
 
 # help text
-action_help = "create: create a new test case from a json request \n \
-                update: update an existing test case with the result of the current optimizer\n \
-                run: run to current test case, compare to the expected results and show the data"
+action_help = "create: create a new test case from a json request. \n \
+                update: update an existing test case with the result of the current optimizer.\n \
+                run: run to current test case, compare to the expected results and show the data."
 file_help = "json file to process. For action 'create', a json request to the optimizer is expected.\
-            for 'run' and 'update' a test case file "
+            for 'run' and 'update' a test case file. "
 
 # disable warnings on div 0 during deviation calculation
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 # parse the args
-parser = argparse.ArgumentParser(prog="testedit")
+parser = argparse.ArgumentParser(prog="testbench")
 parser.add_argument("action", choices=["create", "update", "run"], help=action_help)
 parser.add_argument("file", type=str, default="", help=file_help)
-parser.add_argument("-o", "--outfile", type=str, default="test_case.json", help="")
+parser.add_argument("-o", "--outfile", type=str, default="test_case.json", help="with action create: path to the test case file to write.")
 args = parser.parse_args()
 action = args.action
 file_in = Path(args.file)
