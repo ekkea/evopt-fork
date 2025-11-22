@@ -46,7 +46,6 @@ client = app.test_client()
 # create a new test case from a json request
 if action == "create":
     request = json.loads(file_in.read_text())
-    json.dump(request, indent=4, fp=open("create-request.json", "w"))
     if "batteries" not in request:
         print(f"unexpected format in {file_in.name}")
         sys.exit(1)
@@ -67,8 +66,6 @@ if action == "update":
         print(f"unexpected format in {file_in.name}")
         sys.exit(1)
     request = test_case["request"]
-    # request = {key: value for (key, value) in request.items() if value != {}}
-    json.dump(request, indent=4, fp=open("update-request.json", "w"))
     response = client.post("/optimize/charge-schedule", json=request)
     if response.status_code != 200:
         print(f"Request to optimizer returned with status {response.status_code}")
