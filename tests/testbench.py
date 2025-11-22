@@ -90,12 +90,26 @@ if action == "run":
         print(f"Request to optimizer returned with status {response.status_code}")
         sys.exit(1)
     else:
+        # compare optimizer status
+        df_status = pd.DataFrame({
+            "current run": [response.json["status"]],
+            "expected": [expected_response["status"]]
+        })
+
+        print("Otimizer Status: ")
+        print(tabulate(df_status, headers='keys', tablefmt='psql'))
+
+        if response.json["status"] != "Optimal" or expected_response["status"] != "Optimal":
+            print("Non optimal optimizer status, stopping.")
+            sys.exit(0)
+
         # compare objective values
         calc_obj_value = response.json["objective_value"]
         exp_obj_value = expected_response["objective_value"]
         obj_deviation = (calc_obj_value - exp_obj_value) / exp_obj_value
+
         df_objective = pd.DataFrame({
-            "calculated": [calc_obj_value],
+            "current run": [calc_obj_value],
             "expected": [exp_obj_value],
             "deviation": [obj_deviation]
         })
