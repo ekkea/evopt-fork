@@ -27,10 +27,12 @@ parser = argparse.ArgumentParser(prog="testbench")
 parser.add_argument("action", choices=["create", "update", "run"], help=action_help)
 parser.add_argument("file", type=str, default="", help=file_help)
 parser.add_argument("-o", "--outfile", type=str, default="test_case.json", help="with action create: path to the test case file to write.")
+parser.add_argument("-s", "--stacked", action="store_true", help="draw stacked chart where meaningful.")
 args = parser.parse_args()
 action = args.action
 file_in = Path(args.file)
 file_out = Path(args.outfile)
+use_stacked = args.stacked
 
 # checks
 if not file_in.is_file():
@@ -204,11 +206,18 @@ if action == "run":
 
         axs[1].set_title("Power Balance")
         axs[1].set_ylabel("Power [kW]")
-        for i, bat in enumerate(response.json["batteries"]):
-            axs[1].stairs(df_diagram[f"P_bat{i}"], ts_time_ex, label=f"P_bat{i} [kW]", linewidth=1.5)
-        axs[1].stairs(df_diagram["P_grid"], ts_time_ex, label="P_grid [kW]", linewidth=1.5)
-        axs[1].stairs(df_diagram["P_solar"], ts_time_ex, label="P_solar [kW]", linewidth=1.5)
-        axs[1].stairs(df_diagram["P_demand"], ts_time_ex, label="P_demand [kW]", linewidth=1.5)
+        if use_stacked:
+            for i, bat in enumerate(response.json["batteries"]):
+                axs[1].stackplot(df_diagram["time"], df_diagram[f"P_bat{i}"], labels={f"P_bat{i} [kW]"})
+            axs[1].stackplot(df_diagram["time"], df_diagram["P_grid"], labels={"P_grid [kW]"})
+            axs[1].stackplot(df_diagram["time"], df_diagram["P_solar"], labels={"P_solar [kW]"})
+            axs[1].stackplot(df_diagram["time"], df_diagram["P_demand"], labels={"P_demand [kW]"})
+        else:
+            for i, bat in enumerate(response.json["batteries"]):
+                axs[1].stairs(df_diagram[f"P_bat{i}"], ts_time_ex, label=f"P_bat{i} [kW]", linewidth=1.5)
+            axs[1].stairs(df_diagram["P_grid"], ts_time_ex, label="P_grid [kW]", linewidth=1.5)
+            axs[1].stairs(df_diagram["P_solar"], ts_time_ex, label="P_solar [kW]", linewidth=1.5)
+            axs[1].stairs(df_diagram["P_demand"], ts_time_ex, label="P_demand [kW]", linewidth=1.5)
         axs[1].xaxis.set_minor_locator(mdates.HourLocator())
         axs[1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         axs[1].grid()
