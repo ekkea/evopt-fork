@@ -178,8 +178,12 @@ if action == "run":
 
         # add battery data for the diagram
         for i, bat in enumerate(response.json["batteries"]):
+            # figure out what value to take for 100% SOC
+            bat_capacity = request["batteries"][i]["s_max"]
+            if "s_capacity" in request["batteries"][i]:
+                bat_capacity = request["batteries"][i]["s_capacity"]
             df_diagram[f"P_bat{i}"] = np.divide(np.subtract(bat["discharging_power"], bat["charging_power"]), ts_input["dt"])
-            df_diagram[f"SOC_bat{i}"] = np.divide(bat["state_of_charge"], request["batteries"][i]["s_max"])*100
+            df_diagram[f"SOC_bat{i}"] = np.divide(bat["state_of_charge"], bat_capacity)*100
             df_diagram[f"P_bat{i}_exp"] = np.divide(np.subtract(expected_response["batteries"][i]["discharging_power"],
                                                                 expected_response["batteries"][i]["charging_power"]),
                                                     ts_input["dt"])
