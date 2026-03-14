@@ -450,11 +450,11 @@ class Optimizer:
                         p_demand = min(bat.c_max * self.time_series.dt[t] / 3600., bat.p_demand[t])
                         # two alternative constraints, only one is active:
                         # constraint option 1: charge energy tries to reach min charge energy parameter
-                        self.problem += (self.variables['c'][i][t] + self.variables['p_demand_pen'][i][t] \
+                        self.problem += (self.variables['c'][i][t] + self.variables['p_demand_pen'][i][t]
                                          + self.M * self.variables['z_p_demand'][i][t] >= p_demand)
                         # constraint option 2: charge energy tries to reach energy to fill the battery to s_max
-                        self.problem += (self.variables['c'][i][t] + self.variables['p_demand_pen'][i][t] \
-                                         + self.M * (1 - self.variables['z_p_demand'][i][t]) \
+                        self.problem += (self.variables['c'][i][t] + self.variables['p_demand_pen'][i][t]
+                                         + self.M * (1 - self.variables['z_p_demand'][i][t])
                                          - (self.batteries[i].s_max - self.variables['s'][i][t]) >= 0.)
                     elif bat.c_min > 0:
                         # in time steps without given charging demand, apply normal lower bound:
