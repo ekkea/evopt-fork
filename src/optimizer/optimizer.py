@@ -284,7 +284,7 @@ class Optimizer:
         if self.strategy.charging_strategy == 'charge_before_export':
             for i, bat in enumerate(self.batteries):
                 for t in self.time_steps:
-                    objective += - self.variables['e'][t] * self.min_import_price * 1.5e-5 * (self.T - t)
+                    objective += - self.variables['e'][t] * self.min_import_price * 2e-5 * (self.T - t)
 
         # prefer charging at high solar production times to unload public grid from peaks
         if self.strategy.charging_strategy == 'attenuate_grid_peaks':
