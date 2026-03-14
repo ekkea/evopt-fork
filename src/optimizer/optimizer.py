@@ -25,6 +25,7 @@ class GridConfig:
 class BatteryConfig:
     charge_from_grid: bool
     discharge_to_grid: bool
+    s_capacity: float
     s_min: float
     s_max: float
     s_initial: float
@@ -83,6 +84,7 @@ class Optimizer:
         # scaling for penalty parameters. Make sure goal_penalty is always positive
         self.prc_e_goal_pen = np.min([self.max_import_price, 0.1e-3]) * 10e1
         self.prc_p_goal_pen = np.min([self.max_import_price, 0.1e-3]) * np.max(self.time_series.dt) / 3600 * 10e1
+        self.prc_soc_exc_pen = np.min([self.max_import_price, 0.1e-3]) * 10e2
 
         # penalty for exceeding grid import limit. Result shall not become infeasible but report the violation
         # with helpful information
@@ -136,7 +138,7 @@ class Optimizer:
         self.variables['s'] = {}
         for i, bat in enumerate(self.batteries):
             self.variables['s'][i] = [
-                pulp.LpVariable(f"s_{i}_{t}", lowBound=bat.s_min, upBound=bat.s_max)
+                pulp.LpVariable(f"s_{i}_{t}", lowBound=0, upBound=bat.s_capacity)
                 for t in self.time_steps
             ]
 
@@ -156,6 +158,10 @@ class Optimizer:
             if bat.p_demand is not None:
                 for t in self.time_steps:
                     self.variables['p_demand_pen'][i][t] = pulp.LpVariable(f"p_demand_pen_{i}_{t}", lowBound=0)
+
+        # penalty variable for staying above max SOC and below min SOC
+        self.variables['s_max_pen'] = [[pulp.LpVariable(f"s_max_pen_{i}_{t}", lowBound=0) for t in self.time_steps] for i in range(len(self.batteries))]
+        self.variables['s_min_pen'] = [[pulp.LpVariable(f"s_min_pen_{i}_{t}", lowBound=0) for t in self.time_steps] for i in range(len(self.batteries))]
 
         # Grid import/export variables [Wh]
         self.variables['n'] = [pulp.LpVariable(f"n_{t}", lowBound=0) for t in self.time_steps]
@@ -249,6 +255,12 @@ class Optimizer:
             objective += - self.grid.prc_p_exc_imp * self.variables['p_max_imp_exc']
 
         ############################################################################
+        # Penalties for exceeding battery SOC limits at start
+        for i, bat in enumerate(self.batteries):
+            for t in self.time_steps:
+                objective += - self.prc_soc_exc_pen * (self.variables['s_max_pen'][i][t] + self.variables['s_min_pen'][i][t])
+
+        ############################################################################
         # Penalties for goals that cannot be met
         for i, bat in enumerate(self.batteries):
             # unmet battery charging goals
@@ -275,7 +287,8 @@ class Optimizer:
             # penalty for exceeding the grid export limit
             if self.grid.p_max_exp is not None:
                 # negative target function contribution in a maximizing optimization
-                objective += - self.prc_e_grid_exp_pen * self.variables['e_exp_lim_exc'][t]
+                # decrease penalty slightly over time to push limit exceeding to late times
+                objective += - self.prc_e_grid_exp_pen * (1.0 - t * 1e-5) * self.variables['e_exp_lim_exc'][t]
 
         #############################################################################
         # Secondary strategies to implement preferences without impact to actual cost
@@ -310,8 +323,6 @@ class Optimizer:
         """
         Add constraints related to the energy balance to the model.
         """
-
-        self.time_steps = range(self.T)
 
         # Constraint (2): Power balance for each time step:
         # - solar yield
@@ -396,6 +407,13 @@ class Optimizer:
         """
         Add constraints related to battery behavior to the model.
         """
+        # constraint for the max and min SOC. If the battery starts with an initial SOC
+        # greater than the maximum SOC or lesser than min SOC, maximum discharging is forced until the max.
+        # SOC is reached or max. charing will be forced until min SOC is reached.
+        for i, bat in enumerate(self.batteries):
+            for t in range(0, self.T):
+                self.problem += (self.variables['s_max_pen'][i][t] >= self.variables['s'][i][t] - bat.s_max)
+                self.problem += (self.variables['s_min_pen'][i][t] >= bat.s_min - self.variables['s'][i][t])
 
         # Constraint (3): Battery dynamics
         for i, bat in enumerate(self.batteries):

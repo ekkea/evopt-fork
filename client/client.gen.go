@@ -74,6 +74,10 @@ type BatteryConfig struct {
 	// PDemand Minimum charge demand per time step (Wh)
 	PDemand []float32 `json:"p_demand,omitempty"`
 
+	// SCapacity The capacity at 100% SOC in Wh. If not specified s_capacity will be set to s_max.
+	// s_initial must be less or equal s_capacity, otherwise the optimization will return an error.
+	SCapacity float32 `json:"s_capacity,omitempty"`
+
 	// SGoal Goal state of charge for this battery at each time step (Wh)
 	SGoal []float32 `json:"s_goal,omitempty"`
 
