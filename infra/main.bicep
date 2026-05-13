@@ -114,7 +114,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-01-01' = {
             name: 'http-scaling'
             http: {
               metadata: {
-                concurrentRequests: '1'
+                concurrentRequests: '2'
               }
             }
           }
