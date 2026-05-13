@@ -90,7 +90,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-01-01' = {
             { name: 'OPTIMIZER_NUM_THREADS', value: '2' }
             {
               name: 'GUNICORN_CMD_ARGS'
-              value: '--workers 1 --timeout 40 --max-requests 5000 --max-requests-jitter 500'
+              value: '--workers 2 --timeout 40 --max-requests 5000 --max-requests-jitter 500'
             }
             { name: 'JWT_TOKEN_SECRET', secretRef: 'jwt-token-secret' }
           ]
@@ -114,7 +114,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-01-01' = {
             name: 'http-scaling'
             http: {
               metadata: {
-                concurrentRequests: '2'
+                concurrentRequests: '4'
               }
             }
           }
